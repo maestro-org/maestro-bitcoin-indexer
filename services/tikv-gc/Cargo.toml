@@ -1,0 +1,20 @@
+[package]
+name = "tikv-gc"
+version = "0.1.0"
+edition = "2021"
+description = "TiKV MVCC garbage-collection safepoint manager for the indexing stack"
+license.workspace = true
+repository.workspace = true
+
+
+[dependencies]
+tikv-client = { git = "https://github.com/maestro-org/client-rust.git", rev = "2b08a22d11d2ccd6a1527546cef633e6c61a5449" }
+redis = { version = "0.27.2", features = ["cluster"] }
+futures = { version = "0.3.24" }
+tokio = { version = "1.21.1", features = ["rt-multi-thread"] }
+hex = "0.4.3"
+tracing = "0.1.40"
+tracing-subscriber = "0.3.18"
+clap = { version = "4.5.4", features = ["derive", "env"] }
+[lints]
+workspace = true

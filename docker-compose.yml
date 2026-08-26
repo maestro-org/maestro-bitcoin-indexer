@@ -1,0 +1,207 @@
+# Full Bitcoin indexing stack on testnet4.
+#
+#   docker compose up -d --build
+#
+# Services come up in dependency order; bitcoind then compressor-xbt begin syncing
+# testnet4 immediately (this takes a few hours on first run). Progress:
+#
+#   curl -s localhost:50052/health | jq          # compressor sync progress
+#   docker compose logs -f polyphony-a           # reducer commits
+#   curl -s localhost:3000/healthcheck           # API up
+#
+# The second indexer instance (demonstrating parallel backfill + swap-over) is
+# behind a profile — start it once polyphony-a is ahead:
+#
+#   docker compose --profile multi up -d polyphony-b
+#
+# MVCC garbage collection (tikv-gc) runs automatically every 10 minutes;
+# `make gc` triggers a manual one-shot run.
+
+name: maestro-bitcoin-indexer
+
+services:
+  bitcoind:
+    image: bitcoin/bitcoin:29
+    command:
+      - -testnet4
+      - -server
+      - -rpcbind=0.0.0.0
+      - -rpcallowip=0.0.0.0/0
+      - -rpcuser=maestro
+      - -rpcpassword=maestro
+      - -printtoconsole
+    volumes:
+      - bitcoind-data:/home/bitcoin/.bitcoin
+    healthcheck:
+      test: ["CMD", "bitcoin-cli", "-testnet4", "-rpcuser=maestro", "-rpcpassword=maestro", "getblockchaininfo"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+    restart: unless-stopped
+
+  compressor:
+    build:
+      context: .
+      dockerfile: services/compressor-xbt/Dockerfile
+    command: ["/etc/compressor-xbt/config.toml", "mempool"]
+    volumes:
+      - ./configs/compressor/testnet4.toml:/etc/compressor-xbt/config.toml:ro
+      - compressor-rolldb:/data
+    ports:
+      - "50051:50051" # gRPC sync service
+      - "50052:50052" # health
+    depends_on:
+      bitcoind:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:50052/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+      start_period: 120s
+    restart: unless-stopped
+
+  pd:
+    image: pingcap/pd:v8.5.1
+    command:
+      - --name=pd
+      - --client-urls=http://0.0.0.0:2379
+      - --advertise-client-urls=http://pd:2379
+      - --peer-urls=http://0.0.0.0:2380
+      - --advertise-peer-urls=http://pd:2380
+      - --data-dir=/data/pd
+    volumes:
+      - pd-data:/data
+    ports:
+      - "2379:2379"
+    restart: unless-stopped
+
+  tikv:
+    image: pingcap/tikv:v8.5.1
+    command:
+      - --addr=0.0.0.0:20160
+      - --advertise-addr=tikv:20160
+      - --status-addr=0.0.0.0:20180
+      - --pd-endpoints=http://pd:2379
+      - --data-dir=/data/tikv
+      - --config=/etc/tikv/tikv.toml
+    volumes:
+      - tikv-data:/data
+      - ./configs/tikv/tikv.toml:/etc/tikv/tikv.toml:ro
+    depends_on:
+      - pd
+    restart: unless-stopped
+
+  # Cluster-of-one Redis: the services use Redis Cluster clients, so even a single
+  # node must run in cluster mode with all 16384 slots assigned (see entrypoint).
+  redis:
+    image: redis:7.2
+    entrypoint: ["/usr/local/bin/redis-cluster-init.sh"]
+    volumes:
+      - ./configs/redis/redis-cluster-init.sh:/usr/local/bin/redis-cluster-init.sh:ro
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli cluster info | grep -q cluster_state:ok"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  polyphony-a:
+    build:
+      context: .
+      dockerfile: services/polyphony-xbt/Dockerfile
+    command: ["daemon", "--console", "plain", "--config", "/etc/polyphony-xbt/config.toml"]
+    environment:
+      RUST_LOG: info
+    volumes:
+      - ./configs/polyphony/testnet4-a.toml:/etc/polyphony-xbt/config.toml:ro
+    depends_on:
+      compressor:
+        condition: service_started
+      tikv:
+        condition: service_started
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Second indexer instance (different instance_id, same reducers): start it later
+  # to watch it backfill in parallel and take over instance selection in mapi once
+  # it catches up.
+  polyphony-b:
+    profiles: ["multi"]
+    build:
+      context: .
+      dockerfile: services/polyphony-xbt/Dockerfile
+    command: ["daemon", "--console", "plain", "--config", "/etc/polyphony-xbt/config.toml"]
+    environment:
+      RUST_LOG: info
+    volumes:
+      - ./configs/polyphony/testnet4-b.toml:/etc/polyphony-xbt/config.toml:ro
+    depends_on:
+      compressor:
+        condition: service_started
+      tikv:
+        condition: service_started
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  mapi:
+    build:
+      context: .
+      dockerfile: services/mapi-xbt/Dockerfile
+    command:
+      - --mode=bitcoin-testnet
+      - --tikv-address=pd:2379
+      - --redis=redis://redis:6379
+    ports:
+      - "3000:3000"
+    depends_on:
+      tikv:
+        condition: service_started
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:3000/healthcheck"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  # MVCC GC safepoint manager: computes the newest safely-collectable timestamp
+  # from the indexer cursors in Redis and submits it to PD, every 10 minutes.
+  # Without it TiKV never garbage-collects old MVCC versions. (Production runs the
+  # same binary as a CronJob; `make gc` triggers a manual one-shot run.)
+  tikv-gc:
+    build:
+      context: .
+      dockerfile: services/tikv-gc/Dockerfile
+    command: ["sh", "-c", "while true; do tikv-gc; sleep 600; done"]
+    environment:
+      TIKV_ADDRESS: pd:2379
+      REDIS_ADDRESS: redis://redis:6379
+    depends_on:
+      tikv:
+        condition: service_started
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # On-demand admin CLI (never auto-starts). Inspect or delete indexer key ranges:
+  #   docker compose run --rm daw pd:2379 redis://redis:6379/1 delete instance 0 1
+  # Dry-run by default; append --force to actually delete.
+  daw:
+    profiles: ["admin"]
+    build:
+      context: .
+      dockerfile: services/daw/Dockerfile
+    entrypoint: ["daw"]
+    restart: "no"
+
+volumes:
+  bitcoind-data:
+  compressor-rolldb:
+  pd-data:
+  tikv-data:

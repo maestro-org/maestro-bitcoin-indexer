@@ -1,0 +1,69 @@
+[package]
+name = "polyphony-xbt"
+version = "0.1.0"
+edition = "2024"
+description = "Bitcoin indexer: reducer pipeline consuming enriched blocks and writing to TiKV"
+license.workspace = true
+repository.workspace = true
+
+
+[dependencies]
+hex = "0.4.3"
+net2 = "0.2.37"
+bech32 = "0.8.1"
+clap = { version = "3.2.6", features = ["derive"] }
+chrono = "0.4.38"
+indexmap = "2.2.6"
+log = "0.4.14"
+env_logger = "0.9.0"
+merge = "0.1.0"
+config = { version = "0.13.3", default-features = false, features = [
+    "toml",
+    "json",
+] }
+serde = { version = "1.0.219", features = ["derive"] }
+gasket = { git = "https://github.com/maestro-org/gasket-rs.git", rev = "cb48bb3083c6a8016164c2df0b85a330c60118f1" }
+thiserror = "^1.0.30"
+tikv-client = { git = "https://github.com/maestro-org/client-rust.git", rev = "0ea0f5620ea5f64c202260b5359facc6c8993eab" }
+timbre-xbt = { path = "../../crates/timbre-xbt" }
+lazy_static = "1.4.0"
+rayon = "1.5.3"
+async-trait = "0.1.68"
+itertools = "0.10.5"
+tracing = "0.1.36"
+tracing-subscriber = { version = "0.3.15", features = ["env-filter"] }
+redis = { version = "0.27.5", features = ["cluster"] }
+
+# async feature
+futures = { version = "0.3.24" }
+tokio = { version = "1.21.1", features = ["rt-multi-thread"] }
+
+# tui feature
+indicatif = { version = "0.17.0-rc.11", optional = true }
+
+# vendored openssl so container builds need no system OpenSSL
+openssl = { version = "0.10", optional = true, features = ["vendored"] }
+num-rational = "0.4.1"
+num-bigint = "0.4.4"
+num-traits = "0.2.17"
+json = "0.12.4"
+serde_json = "1.0.108"
+
+tonic = { version = "0.11.0", features = ["tls", "gzip"] }
+tonic-web = "0.11.0"
+prost = "0.12"
+futures-util = "0.3.30"
+
+ordinals = "0.0.12"
+bitcoin = { version = "0.32.3", features = ["serde", "rand-std"] }
+ord = { git = "https://github.com/maestro-org/ord", rev = "8b60053aae17508b2f5fec46ce52edc521b9b935" }
+
+[features]
+tui = ["indicatif"]
+default = ["tui"]
+
+[build-dependencies]
+tonic-build = "0.11.0"
+
+[lints]
+workspace = true

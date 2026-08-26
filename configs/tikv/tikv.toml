@@ -1,0 +1,6 @@
+# TiKV config for the single-node compose deployment.
+
+[storage.block-cache]
+# By default TiKV sizes its block cache to ~45% of visible memory; cap it so the
+# whole stack fits comfortably in one Docker VM alongside bitcoind and the builds.
+capacity = "3GB"

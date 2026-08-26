@@ -1,0 +1,41 @@
+Maestro Bitcoin Indexer
+Copyright 2026 Go Maestro Inc.
+
+This product includes software developed at Go Maestro Inc.
+(https://www.gomaestro.org/).
+
+---
+
+Portions of services/compressor-xbt/src/peer.rs (Bitcoin P2P handshake helpers,
+marked "from metashrew" in the source) are derived from the metashrew project
+(https://github.com/kungfuflex/metashrew), used under the MIT License:
+
+  Copyright (c) 2025 Sandshrew Inc
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in
+  all copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+  IN THE SOFTWARE.
+
+---
+
+The indexer (polyphony-xbt) is an architectural descendant of TxPipe's Scrolls
+(https://github.com/txpipe/scrolls, Apache-2.0) and is built on the gasket
+staged-pipeline framework (https://github.com/construkts/gasket-rs,
+Apache-2.0). Metaprotocol parsing builds on the ord project
+(https://github.com/ordinals/ord, CC0-1.0). The stack uses maintained forks of
+gasket, ord, the TiKV Rust client, and bb8-tikv, published under the
+maestro-org GitHub organisation.

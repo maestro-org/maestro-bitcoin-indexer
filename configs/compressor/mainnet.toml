@@ -1,0 +1,29 @@
+# compressor-xbt — mainnet, docker compose deployment.
+# Mainnet needs a fully synced bitcoind and substantial disk for the rolldb;
+# expect the initial enrichment sync to take days.
+
+[logging]
+max_level = "info"
+
+[chain_db]
+path = "/data/rolldb"
+immutable_after_confs = 10
+
+[sync]
+node_address = "bitcoind:8333"
+node_rpc = "bitcoind:8332"
+node_rpc_user = "maestro"
+node_rpc_pass = "maestro"
+network = "bitcoin"
+health_endpoint = "0.0.0.0:50052"
+# Mainnet metaprotocol activation heights
+first_rune_height = 840000
+first_inscription_height = 767430
+jubilee_height = 824544
+block_page_size = 50
+sync_channel_queue = 200
+# The mainnet UTXO set does not comfortably fit in memory on typical hardware.
+utxos_in_memory = false
+
+[serve]
+listen_address = "0.0.0.0:50051"

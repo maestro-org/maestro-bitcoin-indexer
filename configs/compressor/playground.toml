@@ -1,0 +1,26 @@
+# compressor-xbt — testnet4, playground deployment (services run natively on the
+# host against tiup-playground TiKV, dockerised bitcoind and redis).
+
+[logging]
+max_level = "info"
+
+[chain_db]
+path = "./tmp/playground/rolldb"
+immutable_after_confs = 10
+
+[sync]
+node_address = "127.0.0.1:48333"
+node_rpc = "127.0.0.1:48332"
+node_rpc_user = "maestro"
+node_rpc_pass = "maestro"
+network = "bitcoin_testnet"
+health_endpoint = "127.0.0.1:50052"
+first_rune_height = 0
+first_inscription_height = 0
+jubilee_height = 0
+block_page_size = 50
+sync_channel_queue = 200
+utxos_in_memory = true
+
+[serve]
+listen_address = "127.0.0.1:50051"

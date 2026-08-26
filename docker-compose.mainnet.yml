@@ -1,0 +1,31 @@
+# Mainnet override — bring disk (bitcoind ~700GB+, rolldb and TiKV grow into the
+# hundreds of GB) and patience (initial sync takes days).
+#
+#   docker compose -f docker-compose.yml -f docker-compose.mainnet.yml up -d --build
+
+services:
+  bitcoind:
+    command:
+      - -server
+      - -rpcbind=0.0.0.0
+      - -rpcallowip=0.0.0.0/0
+      - -rpcuser=maestro
+      - -rpcpassword=maestro
+      - -printtoconsole
+    healthcheck:
+      test: ["CMD", "bitcoin-cli", "-rpcuser=maestro", "-rpcpassword=maestro", "getblockchaininfo"]
+
+  compressor:
+    volumes:
+      - ./configs/compressor/mainnet.toml:/etc/compressor-xbt/config.toml:ro
+      - compressor-rolldb:/data
+
+  polyphony-a:
+    volumes:
+      - ./configs/polyphony/mainnet.toml:/etc/polyphony-xbt/config.toml:ro
+
+  mapi:
+    command:
+      - --mode=bitcoin
+      - --tikv-address=pd:2379
+      - --redis=redis://redis:6379

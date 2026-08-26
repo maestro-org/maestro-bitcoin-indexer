@@ -1,0 +1,21 @@
+[package]
+name = "daw"
+version = "0.1.0"
+edition = "2021"
+description = "Admin CLI for inspecting and deleting indexer key ranges in TiKV"
+license.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "daw"
+path = "src/main.rs"
+
+[dependencies]
+clap = { version = "4.3.23", features = ["derive"] }
+hex = "0.4.3"
+tokio = { version = "1.12.0", features = ["full"] }
+tracing = "0.1.36"
+tracing-subscriber = { version = "0.3.15", features = ["env-filter"] }
+tikv-client = { git = "https://github.com/maestro-org/client-rust.git", rev = "0ea0f5620ea5f64c202260b5359facc6c8993eab" }
+redis = { version = "0.27.2", features = ["cluster"] }
+timbre-xbt = { path = "../../crates/timbre-xbt" }

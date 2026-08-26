@@ -1,0 +1,5 @@
+/target
+/services/compressor-xbt/target
+*.rolldb
+.DS_Store
+design-notes.md

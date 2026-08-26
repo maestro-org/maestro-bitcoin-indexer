@@ -1,0 +1,18 @@
+[package]
+name = "timbre-xbt"
+version = "0.0.1"
+edition = "2021"
+description = "TiKV key/value encoding schema shared by the Bitcoin indexer and API"
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+base64 = "0.21.0"
+hex = "0.4.3"
+indexmap = "2.2.6"
+thiserror = "1.0.59"
+timbre-xbt-macros = { path = "./macros" }
+
+
+[lints]
+workspace = true

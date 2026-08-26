@@ -1,0 +1,18 @@
+[source]
+type = "Emulate"
+# instructions = "FFF"
+
+[[reducers]]
+type = "UtxosByRuneId"
+
+[storage]
+type = "TiKV"
+connection_params = "127.0.0.1:2379"
+dataplane_id = 123
+instance_id = 1
+
+[intersect]
+type = "Origin"
+
+[policy]
+missing_data = "Skip"

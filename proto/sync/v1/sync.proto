@@ -1,0 +1,196 @@
+syntax = "proto3";
+
+package compressorxbt.sync.v1;
+
+// Identifier of a specific block
+message BlockRef {
+    uint64 height = 1; // Block height
+    bytes hash = 2; // Block hash
+}
+
+// Identifier of a specific transaction output
+message TxoRef {
+    bytes tx_hash = 1; // Transaction hash of transaction which produced the output
+    uint32 txo_index = 2; // Output index in producing transaction
+}
+
+message ResolvedTxo {
+    TxoRef ref = 1;
+    uint64 height = 2;
+    bytes raw = 3;
+    repeated OrdinalRange ord_ranges = 4;
+}
+
+// Inclusive range of ordinals
+message OrdinalRange {
+    uint64 lower = 1;
+    uint64 upper = 2;
+}
+
+// --- RUNES
+
+// Rune ID
+message RuneId {
+    uint64 block = 1; // Block height part of Rune ID
+    uint32 tx = 2; // Transaction index part of Rune ID
+}
+
+// Rune kind and amount
+message Rune {
+    RuneId id = 1;
+    bytes amount = 2; // u128 amount
+}
+
+message RunesResolvedTxo {
+    TxoRef ref = 1; // Transaction output reference
+    repeated Rune runes = 2; // List of Rune ID and amount tuples contained in output
+}
+
+message RunesInfo {
+    repeated RunesResolvedTxo txo_resolver = 1; // Map of transaction output references (inputs and outputs) to Runes
+    repeated uint32 successful_etchs = 2; // List of indices of block txs which had a successful etching
+    repeated uint32 successful_mints = 3; // List of indices of block txs which had a successful mint
+}
+
+// --- BRC20
+
+message BRC20Deploy {
+    bytes ticker = 1;
+}
+
+message BRC20Mint {
+    bytes ticker = 1;
+    bytes amt = 2;
+    bytes script_hash = 3;
+}
+
+message BRC20Transfer {
+    bytes ticker = 1;
+    bytes amt = 2;
+    TxoRef first_output = 3;
+    bytes script_hash = 4;
+}
+
+message BRC20TransferInit {
+    bytes ticker = 1;
+    bytes amt = 2;
+    bytes script_hash = 3;
+}
+
+message BRC20Action {
+    oneof kind {
+        BRC20Deploy deploy = 1;
+        BRC20Mint mint = 2;
+        BRC20Transfer transfer = 3;
+        BRC20TransferInit transfer_init = 4;
+    }
+}
+
+message BRC20Resolver {
+    InscriptionId id = 1;
+    BRC20Action action = 2;
+}
+
+// --- INSCRIPTIONS
+
+message InscriptionId {
+    bytes tx_hash = 1; // hash of the reveal tx
+    uint32 index = 2; // index of new inscriptions in the reveal tx
+}
+
+message InscriptionAtOffset {
+    InscriptionId id = 1;
+    uint32 offset = 2; // offset within the UTxO of the satoshi which is inscribed
+}
+
+message InscriptionOrigin {
+    InscriptionId id = 1;
+    uint64 inscription_num = 2; // global inscription number
+}
+
+message InscriptionResolvedTxo {
+    TxoRef ref = 1;
+    repeated InscriptionAtOffset inscriptions = 2;
+}
+
+message ValidReinscription {
+    uint32 tx_index = 1; // index of transaction in block
+    uint32 inscription_index = 2; // index of inscription in transaction
+}
+
+message InscriptionsInfo {
+    repeated InscriptionResolvedTxo txo_resolver = 1; // Map of transaction output references (inputs and outputs) to inscriptions and their offsets
+    repeated ValidReinscription valid_reinscriptions = 2;
+    repeated BRC20Resolver brc20_resolver = 3; // Vec of inscription IDs and BRC20 actions related
+    repeated InscriptionOrigin new_inscriptions = 4; // Map Inscription ID -> inscription number
+}
+
+// ---
+
+// Block bytes with map of resolved transaction inputs
+message BlockWithContext {
+    BlockRef ref = 1; // Block reference (point)
+    bytes raw = 2; // Raw bytes of block
+    repeated ResolvedTxo txo_resolver = 3; // Map of transaction output references (inputs and outputs) to raw bytes and ordinals
+    RunesInfo runes = 4; // Runes-related information
+    InscriptionsInfo inscriptions = 5;
+}
+
+// Request to receive blocks, with input context, in chain order
+message PageBlocksWithCtxRequest {
+    BlockRef cursor = 1; // Pagination cursor
+    uint32 max_items = 2; // Max items per page
+}
+
+// Response with page of blocks with contexts
+message PageBlocksWithCtxResponse {
+    repeated BlockWithContext blocks = 1; // List of requested blocks with contexts
+    BlockRef next_cursor = 2; // Pagination cursor (first block of next page)
+    BlockRef chain_tip = 3; // Chain tip at time of response
+}
+
+// Request to receive stream of chain events (new block or rollback)
+message StreamUpdatesWithCtxRequest {
+  repeated BlockRef intersects = 1; // List of candidate intersect points, highest priority first
+}
+
+// Response containing the chain update
+message StreamUpdatesWithCtxResponse {
+  oneof action {
+    BlockWithContext apply = 1; // Apply this block
+    BlockRef undo = 2; // Undo this block
+    BlockRef reset = 3; // Rollback point
+  }
+}
+
+// Block bytes with map of resolved transaction inputs
+message MempoolBlockWithContext {
+    BlockRef ref = 1 [deprecated=true]; // Deprecrated in favour of fields 6 and 7
+    repeated bytes raw_txs = 2; // Raw bytes of transactions in estimated block (will be empty bytes for transactions client has cached)
+    repeated ResolvedTxo txo_resolver = 3; // Map of transaction output references (inputs and outputs) to raw bytes and ordinals
+    RunesInfo runes = 4; // Runes-related information
+    InscriptionsInfo inscriptions = 5; // Inscriptions-related information
+    BlockRef chain_tip = 6; // Mainchain tip which the mempool block is a descendent of
+    uint64 height = 7; // Height of the estimated mempool block (for example, chain tip height + 1 for the first mempool block)
+    bytes merkle_root = 8; // Merkle root of the transactions in the estimated block
+    uint64 mempool_view_ts = 9; // UNIX timestamp (milliseconds) of when we took a snapshot of the mempool to create this estimated block
+    repeated bytes txids = 10; // Transaction IDs in the same order as raw_txs
+}
+
+// Request to receive mempool block data, with input context
+message MempoolBlocksWithCtxRequest {
+    BlockRef tip_intersect = 1; // Tip block to try intersect with mempool block data
+    repeated bytes cached_txs = 2; // List of transaction hashes the client already has cached
+}
+
+// Response with mempool blocks with contexts
+message MempoolBlocksWithCtxResponse {
+    repeated MempoolBlockWithContext blocks = 1; // List of mempool blocks with contexts
+}
+
+// Service
+service SyncService {
+  rpc PageBlocksWithContext(PageBlocksWithCtxRequest) returns (PageBlocksWithCtxResponse); // Fetch a number of blocks starting from a point in the chain, with transaction input context
+  rpc StreamUpdatesWithContext(StreamUpdatesWithCtxRequest) returns (stream StreamUpdatesWithCtxResponse); // Stream chain updates (new blocks, rollbacks) from a point in the chain, with transaction input context
+  rpc MempoolBlocksWithContext(MempoolBlocksWithCtxRequest) returns (MempoolBlocksWithCtxResponse); // Fetch mempool blocks that were processed using the provided intersect as the tip
+}

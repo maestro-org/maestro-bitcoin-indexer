@@ -1,0 +1,80 @@
+syntax = "proto3";
+
+package maestroglobalmempool.mgm.v1;
+
+message BlockRef {
+    uint64 height = 1; // Block height
+    bytes hash = 2; // Block hash
+}
+
+message BlockTemplate {
+    repeated PackageTx txs = 1;
+}
+
+message Package {
+    repeated PackageTx txs = 1;
+    double fee_rate = 2;
+}
+
+message PackageTx {
+    bytes txid = 1;
+    bytes tx = 2;
+}
+
+message GetTemplatesRequest {
+    uint64 ignored = 1;
+};
+
+message GetTemplatesV2Request {
+    repeated bytes cached_txs = 1; // list of txids for which we do not need to receive tx bytes
+};
+
+message GetTemplatesResponse {
+    BlockRef prev_block = 1;
+    repeated BlockTemplate blocks = 2;
+    uint64 timestamp = 3;
+}
+
+message SubmitTransactionRequest {
+    bytes tx = 1; // Raw transaction bytes
+}
+
+message SubmitTransactionResponse {
+    bool success = 1;
+    bytes txid = 2; // Present iff success is true
+}
+
+message GetMempoolStatsRequest {
+    // Empty request
+}
+
+message GetMempoolStatsResponse {
+    uint64 mempool_tx_count = 1;
+    uint64 orphan_tx_count = 2;
+}
+
+message Appearance {
+    string peer = 1;
+    string timestamp = 2;
+}
+
+message MempoolTx {
+    bytes txid = 1;
+    repeated Appearance appearances = 2;
+}
+
+message GetMempoolRequest {
+    // Empty request
+}
+
+message GetMempoolResponse {
+    repeated MempoolTx txs = 1;
+}
+
+service Service {
+  rpc GetTemplates(GetTemplatesRequest) returns (GetTemplatesResponse);
+  rpc GetTemplatesV2(GetTemplatesV2Request) returns (GetTemplatesResponse);
+  rpc SubmitTransaction(SubmitTransactionRequest) returns (SubmitTransactionResponse);
+  rpc GetMempoolStats(GetMempoolStatsRequest) returns (GetMempoolStatsResponse);
+  rpc GetMempool(GetMempoolRequest) returns (GetMempoolResponse);
+}

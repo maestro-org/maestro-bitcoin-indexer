@@ -1,0 +1,33 @@
+# compressor-xbt — testnet4, docker compose deployment.
+# Env overrides use the COMPR prefix, e.g. COMPR_SYNC_NODE_RPC_USER.
+
+[logging]
+max_level = "info"
+
+[chain_db]
+path = "/data/rolldb"
+# Depth of the mutable window (blocks that can still be rolled back). This also
+# caps how far behind the tip a consumer can intersect the mutable stream, so it
+# bounds the indexer's effective rollback runway: keep it >= the polyphony
+# `buffer_size` on reorg-prone networks like testnet4.
+immutable_after_confs = 150
+
+[sync]
+# bitcoind P2P and JSON-RPC (testnet4 default ports)
+node_address = "bitcoind:48333"
+node_rpc = "bitcoind:48332"
+node_rpc_user = "maestro"
+node_rpc_pass = "maestro"
+network = "bitcoin_testnet"
+health_endpoint = "0.0.0.0:50052"
+# Metaprotocol activation heights: testnet4 launched after all activations, so
+# runes/inscriptions are tracked from genesis.
+first_rune_height = 0
+first_inscription_height = 0
+jubilee_height = 0
+block_page_size = 50
+sync_channel_queue = 200
+utxos_in_memory = true
+
+[serve]
+listen_address = "0.0.0.0:50051"

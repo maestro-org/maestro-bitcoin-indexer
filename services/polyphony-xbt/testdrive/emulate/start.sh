@@ -1,0 +1,1 @@
+RUST_LOG=debug cargo run --all-features --bin polyphony-xbt -- daemon --console plain --config emulate.toml

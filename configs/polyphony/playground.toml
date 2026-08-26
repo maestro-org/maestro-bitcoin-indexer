@@ -1,0 +1,152 @@
+# polyphony-xbt — testnet4, playground (native cargo run against tiup TiKV).
+# Env overrides use the POLYPHONY prefix with __ separator,
+# e.g. POLYPHONY__STORAGE__INSTANCE_ID.
+
+[general]
+stage_timeout_secs = 1800
+stage_message_queue = 20
+# Rollback buffer depth (blocks). testnet4 sees deep reorgs (30+ blocks observed);
+# a reorg deeper than this buffer is unrecoverable and requires an instance resync.
+buffer_size = 128
+
+[source]
+type = "Compressor"
+url = "http://127.0.0.1:50051"
+max_items_per_page = 20
+use_mempool = true
+
+[intersect]
+type = "Origin"
+
+[storage]
+type = "TiKV"
+connection_params = "127.0.0.1:2379"
+redis_address = "redis://127.0.0.1:6379"
+network = "testnet"
+dataplane_id = 0
+instance_id = 0
+
+# Inscription and BRC-20 reducers are commented out to keep the local test light
+# (testnet4 is inscription-heavy); uncomment to index them. Note: API endpoints
+# that require them (/addresses/<addr>/utxos, /assets/inscriptions/*,
+# /assets/brc20/*) return errors while they are disabled.
+
+# [[reducers]]
+# type = "BalancesByBrc20"
+
+[[reducers]]
+type = "BalancesByRuneId"
+
+[[reducers]]
+type = "BlockByTxHash"
+
+[[reducers]]
+type = "BlockInfo"
+
+# [[reducers]]
+# type = "Brc20BalancesByScriptHash"
+
+# [[reducers]]
+# type = "Brc20TermsByTicker"
+
+# [[reducers]]
+# type = "ContentByInscriptionId"
+
+[[reducers]]
+type = "EtchingByRuneId"
+
+[[reducers]]
+type = "HeightByBlockHash"
+
+[[reducers]]
+type = "HeightByTimestamp"
+
+# [[reducers]]
+# type = "InscriptionUtxosByScriptHash"
+
+# [[reducers]]
+# type = "InscriptionActivityByScriptHash"
+
+# [[reducers]]
+# type = "InscriptionActivityByTx"
+
+# [[reducers]]
+# type = "InscriptionActivityByTxV2"
+
+[[reducers]]
+type = "MintsByRuneId"
+
+[[reducers]]
+type = "RuneTxsByScriptHash"
+
+[[reducers]]
+type = "RuneIdByRuneName"
+
+[[reducers]]
+type = "RuneUtxosByScriptHash"
+
+[[reducers]]
+type = "SatBalanceByScriptHash"
+
+[[reducers]]
+type = "HistoricalSatBalanceByScriptHash"
+
+[[reducers]]
+type = "SatTxsByScriptHash"
+
+[[reducers]]
+type = "SatsPerVbByBlock"
+
+[[reducers]]
+type = "ScriptByScriptHash"
+
+[[reducers]]
+type = "ScriptHashByAddressPayloadHash"
+
+[[reducers]]
+type = "SpendingTxByTxo"
+
+# [[reducers]]
+# type = "TotalInscriptionsByScriptHash"
+
+[[reducers]]
+type = "TotalOutputsByScriptHash"
+
+[[reducers]]
+type = "TotalSatInInputsByScriptHash"
+
+[[reducers]]
+type = "TotalSatInOutputsByScriptHash"
+
+[[reducers]]
+type = "TotalTxsByScriptHash"
+
+[[reducers]]
+type = "TotalUtxosByScriptHash"
+
+# [[reducers]]
+# type = "TransferInscriptionsByScriptHash"
+
+[[reducers]]
+type = "TxFirstSeenTimestamp"
+
+[[reducers]]
+type = "TxInfo"
+
+[[reducers]]
+type = "TxsByBlock"
+
+# [[reducers]]
+# type = "TxsByInscription"
+
+[[reducers]]
+type = "TxsByRuneId"
+
+[[reducers]]
+type = "TxsByScriptHash"
+
+[[reducers]]
+type = "UtxosByRuneId"
+
+[[reducers]]
+type = "UtxosByScriptHash"

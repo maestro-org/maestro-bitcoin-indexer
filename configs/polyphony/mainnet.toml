@@ -1,0 +1,145 @@
+# polyphony-xbt — mainnet, docker compose.
+# Env overrides use the POLYPHONY prefix with __ separator,
+# e.g. POLYPHONY__STORAGE__INSTANCE_ID.
+
+[general]
+stage_timeout_secs = 1800
+stage_message_queue = 20
+buffer_size = 32
+
+[source]
+type = "Compressor"
+url = "http://compressor:50051"
+max_items_per_page = 20
+use_mempool = true
+
+[intersect]
+type = "Origin"
+
+[storage]
+type = "TiKV"
+connection_params = "pd:2379"
+redis_address = "redis://redis:6379"
+network = "mainnet"
+dataplane_id = 0
+instance_id = 0
+
+[[reducers]]
+type = "BalancesByBrc20"
+
+[[reducers]]
+type = "BalancesByRuneId"
+
+[[reducers]]
+type = "BlockByTxHash"
+
+[[reducers]]
+type = "BlockInfo"
+
+[[reducers]]
+type = "Brc20BalancesByScriptHash"
+
+[[reducers]]
+type = "Brc20TermsByTicker"
+
+[[reducers]]
+type = "ContentByInscriptionId"
+
+[[reducers]]
+type = "EtchingByRuneId"
+
+[[reducers]]
+type = "HeightByBlockHash"
+
+[[reducers]]
+type = "HeightByTimestamp"
+
+[[reducers]]
+type = "InscriptionUtxosByScriptHash"
+
+[[reducers]]
+type = "InscriptionActivityByScriptHash"
+
+[[reducers]]
+type = "InscriptionActivityByTx"
+
+[[reducers]]
+type = "InscriptionActivityByTxV2"
+
+[[reducers]]
+type = "MintsByRuneId"
+
+[[reducers]]
+type = "RuneTxsByScriptHash"
+
+[[reducers]]
+type = "RuneIdByRuneName"
+
+[[reducers]]
+type = "RuneUtxosByScriptHash"
+
+[[reducers]]
+type = "SatBalanceByScriptHash"
+
+[[reducers]]
+type = "HistoricalSatBalanceByScriptHash"
+
+[[reducers]]
+type = "SatTxsByScriptHash"
+
+[[reducers]]
+type = "SatsPerVbByBlock"
+
+[[reducers]]
+type = "ScriptByScriptHash"
+
+[[reducers]]
+type = "ScriptHashByAddressPayloadHash"
+
+[[reducers]]
+type = "SpendingTxByTxo"
+
+[[reducers]]
+type = "TotalInscriptionsByScriptHash"
+
+[[reducers]]
+type = "TotalOutputsByScriptHash"
+
+[[reducers]]
+type = "TotalSatInInputsByScriptHash"
+
+[[reducers]]
+type = "TotalSatInOutputsByScriptHash"
+
+[[reducers]]
+type = "TotalTxsByScriptHash"
+
+[[reducers]]
+type = "TotalUtxosByScriptHash"
+
+[[reducers]]
+type = "TransferInscriptionsByScriptHash"
+
+[[reducers]]
+type = "TxFirstSeenTimestamp"
+
+[[reducers]]
+type = "TxInfo"
+
+[[reducers]]
+type = "TxsByBlock"
+
+[[reducers]]
+type = "TxsByInscription"
+
+[[reducers]]
+type = "TxsByRuneId"
+
+[[reducers]]
+type = "TxsByScriptHash"
+
+[[reducers]]
+type = "UtxosByRuneId"
+
+[[reducers]]
+type = "UtxosByScriptHash"
